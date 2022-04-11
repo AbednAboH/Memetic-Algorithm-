@@ -190,7 +190,7 @@ class bin_packing_prob(DNA):
     bin1=bin
 
     def __init__(self):
-        parameters.__init__(self)
+        DNA.__init__(self)
         self.bin_objects = []
 
     def target_creater(self, target):
@@ -216,6 +216,8 @@ class bin_packing_prob(DNA):
         # self.bin_cappacity = self.target[0]
         self.create_special_parameter(target_size)
 
+    def hash(self, other):
+        return str(self.object + other.object)
     def __str__(self):
         count = 0
         bstr = ""
