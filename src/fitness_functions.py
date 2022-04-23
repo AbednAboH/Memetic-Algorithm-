@@ -15,7 +15,8 @@ class fitness_selector:
     def __init__(self):
         self.select = {0: self.distance_fittness, 1: self.bul_pqia, 2: self.n_queens_conflict,
                        3: self.n_queens_conf_based_on_place, BIN: self.bins_fitness,
-                       LIV_DIST: self.levenshteinDistance, KINDL_TAU: self.kendallTau}
+                       LIV_DIST: self.levenshteinDistance, KINDL_TAU: self.kendallTau, 'baldwin': self.baldwinss,
+                       "fixed": self.fixed_distance}
 
     def distance_fittness(self, object, target, target_size):
         fitness = 0
@@ -62,6 +63,7 @@ class fitness_selector:
         number_of_bins = len(object.bin_objects)
         # return abs(ceil(sumof*9/8)-number_of_bins)
         return number_of_bins
+
     # these functions take [] as input , not a class instance !
 
     def levinshtine_distance(self, a, b, target_size=0):
@@ -103,7 +105,7 @@ class fitness_selector:
                     x, y, z = distances[object][target - 1], distances[object - 1][target], distances[object - 1][
                         target - 1]
                     distances[object][target] = y + 1 if (y <= x and y <= z) else x + 1 if (
-                                x <= y and x <= z) else z + 1
+                            x <= y and x <= z) else z + 1
         return distances[len(first)][len(second)]
 
     def kendallTauDistance(self, object, target):
@@ -139,3 +141,16 @@ class fitness_selector:
             else:
                 sum_of_elements += (object[i] - target[i]) ** 2
         return math.sqrt(sum_of_elements)
+
+    def fixed_distance(self, object, target, target_size=0):
+        correct = incorrect = 0
+
+        for i in range(len(target)):
+            if object[i] == target[i]:
+                correct += 1
+            elif object[i]!='?':
+                incorrect += 1
+        return correct, incorrect
+
+    def baldwinss(self, pop_size, tries, num_tries):
+        return 1 + ((pop_size - 1) * tries / num_tries)

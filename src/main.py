@@ -5,9 +5,10 @@ from PSO import PSO_alg
 from Minimal_conflicts import Minimal_conflicts
 from first_fit import FirstFit
 from create_problem_sets import *
+from MA import PureMA
 import time
 
-algo = {GenA: genetic_algorithem, PSO: PSO_alg, MINIMAL_CONF: Minimal_conflicts, FIRST_FIT: FirstFit}
+algo = {GenA: genetic_algorithem, PSO: PSO_alg, MINIMAL_CONF: Minimal_conflicts, FIRST_FIT: FirstFit,5:PureMA}
 problem_sets_GA = {BUL_PGIA: DNA, NQUEENS: NQueens_prb, 3: bin_packing_prob, 4: bin_pack}
 problem_sets_PSO = {BUL_PGIA: PSO_prb}
 problem_sets_bin_packing = {1: 'N1C1W1_A', 2: 'N1C1W1_B', 3: 'N1C1W1_C', 4: 'N1C1W1_D'}
@@ -28,7 +29,7 @@ def main():
     GA_TARGET = None
     while process:
         GA_POPSIZE = int(input("set population size:"))
-        alg = int(input("chose algorithem :  1:GA  2:PSO 3:Minimal conflicts  4:first fit"))
+        alg = int(input("chose algorithem :  1:GA  \n2:PSO 3:Minimal conflicts \n 4:first fit\n 5: baldwins\n 6:MA+GA"))
         solution = None
         if alg == GenA:
             prob = int(input("choose problem to solve :  1:Bul Pgia  2:N Queens 3:Bin Packing Prob"))
@@ -118,6 +119,19 @@ def main():
             problem_set.target = target
             problem_set.capacity = target[1]
             solution = algo[alg](target, capacity, problem_set)
+        elif alg==5:
+            serviving_stratigy = int(input("choose surviving strategy :  Elite: 1 ,Age: 2"))
+            print("if you want to use cx make sure that the string doesn't have 2 matching letters ! ")
+            GA_TARGET = input("type bit string: ")
+            crosstype = int(
+                input("choose cross function :  One Cross: 1  Two Cross: 2  Uniform: 3  PMX: 4   CX: 5"))
+            selection = int(input("choose selection function :  RAND: 0  SUS: 1  RWS: 2  tournement:3"))
+            fit = int(input("choose fitness function :  0:Distance  1:Bul Pgia   "))
+            mutation = int(
+                input("choose mutation scheme:  random mutation: 1 ,swap_mutate: 2 ,insertion_mutate: 3"))
+            target_size = len(GA_TARGET)
+            solution = algo[alg](GA_TARGET, target_size, GA_POPSIZE, baldwin_effect, crosstype, fit, selection,
+                      serviving_stratigy, mutation, Gene_dist, 0)
         overall_time = time.perf_counter()
         solution.solve()
         overall_time = time.perf_counter() - overall_time

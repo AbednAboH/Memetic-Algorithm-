@@ -1,31 +1,42 @@
+import math
 import random
 import sys
+
+import numpy
 from numpy import unique, setdiff1d
 from settings import PENALTY, HIGH_PENALTY, BIN
-from fitness_functions import fitness_selector,hash_table
+from fitness_functions import fitness_selector, hash_table
 from mutations import mutations
+
+
 # have to fill hash table with different keys when getting the command from main
 
 
 # basic class for all problem sets because fittness and the member of the population are problem specific
 # and we have to eliminate problem specifc parameters from the Genetic algorithem
 # might add mutate !
-class parameters:
+class Agent:
     fitnesstype = fitness_selector().select
 
     def __init__(self):
         self.object = None
+        self.learning_fitness=0
+        self.algo_huristic=None
         self.age = 0
         self.fitness = 0
+
     # creates a member of the population
     def create_object(self, target_size, target):
         return self.object
 
     def character_creation(self, target_size):
         pass
-
+    def Learning_fitness(self, target, target_size, huristic):
+        self.learning_fitness = self.fitnesstype[huristic](self, target, target_size)
+        return self.learning_fitness
     # function to calculate the fitness for this specific problem
-    def calculate_fittness(self, target, target_size, select_fitness,age_update=True):
+
+    def calculate_fittness(self, target, target_size, select_fitness, age_update=True):
         self.fitness = self.fitnesstype[select_fitness](self, target, target_size)
         self.age += 1 if age_update else 0
         return self.fitness
@@ -40,7 +51,7 @@ class parameters:
     def __str__(self):
         bstr = ""
         for i in self.object:
-            bstr += str(i)+","
+            bstr += str(i) + ","
         return bstr
 
     def __repr__(self):
@@ -48,21 +59,23 @@ class parameters:
         for i in self.object:
             bstr += str(i) + " "
         return bstr
+
     # def __eq__(self, other):
     #     self.fitness = other.fitness
     #     self.object = other.object
     # age !
-    def hash(self,other):
+    def hash(self, other):
         return self.object
 
+
 # class for first problem
-class DNA(parameters):
+class DNA(Agent):
     mutation = mutations()
 
     def __init__(self):
-        parameters.__init__(self)
-        self.diversity=0
-        self.spiecy=0
+        Agent.__init__(self)
+        self.diversity = 0
+        self.spiecy = 0
 
     def create_object(self, target_size, target):
         self.object = []
@@ -77,8 +90,10 @@ class DNA(parameters):
     def mutate(self, target_size, member, mutation_type):
         self.mutation.select[mutation_type](target_size, member, self.character_creation)
 
-    def hash(self,other):
+    def hash(self, other):
         return ''.join(self.object + other.object)
+
+
 # class for pso problem
 class PSO_prb(DNA):
     # our object is the initial position , we added 2 parameters that are required
@@ -135,8 +150,9 @@ class NQueens_prb(DNA):
     def character_creation(self, target_size):
         return random.randint(0, target_size - 1)
 
-    def hash(self,other):
-        return str(self.object+other.object)
+    def hash(self, other):
+        return str(self.object + other.object)
+
 
 # bin class for each cromosome that puts items from the cromosome in a bin
 class bin:
@@ -157,29 +173,30 @@ class bin:
             #     break
         return setdiff1d(items, self.items)
 
-
-
     # if there exists a member that is mutual between the two then return false
     def __lt__(self, other):
         return len(self.items) + len(other.items) != len(unique(other.items + self.items))
 
     def __eq__(self, other):
         return self.items == other.items
+
+
 # add a field for bins with a way to fill them "first fit "
 class first_fit_prob(bin):
     hash = hash_table
     capacity = 0
 
     def __init__(self, capacity, items=[], fill=0):
-        bin.__init__(self,capacity)
+        bin.__init__(self, capacity)
 
     def fill_bins(self, items):
-        #fit according to the fill ratio
+        # fit according to the fill ratio
         for item in range(len(items)):
             if self.fill + self.hash[items[item]] <= self.capacity:
                 self.items.append(items[item])
                 self.fill += self.hash[items[item]]
         return setdiff1d(items, self.items)
+
 
 # class bin(first_fit):
 
@@ -187,7 +204,7 @@ class first_fit_prob(bin):
 class bin_packing_prob(DNA):
     target = []
     capacity = 0
-    bin1=bin
+    bin1 = bin
 
     def __init__(self):
         DNA.__init__(self)
@@ -218,6 +235,7 @@ class bin_packing_prob(DNA):
 
     def hash(self, other):
         return str(self.object + other.object)
+
     def __str__(self):
         count = 0
         bstr = ""
@@ -228,16 +246,16 @@ class bin_packing_prob(DNA):
                 bstr += str(hash_table[j]) + ","
             bstr += "]"
         bstr += "]\n"
-        bstr+="number of bins:"+str(len(self.bin_objects))+"\n"
+        bstr += "number of bins:" + str(len(self.bin_objects)) + "\n"
         return bstr
 
-#first-fit
+
+# first-fit
 class bin_pack(bin_packing_prob):
     bin1 = first_fit_prob
+
     def __init__(self):
         super(bin_pack, self).__init__()
-
-
 
 
 class hybrid_bin_packing_prob(DNA):
@@ -245,7 +263,7 @@ class hybrid_bin_packing_prob(DNA):
     capacity = 0
 
     def __init__(self):
-        parameters.__init__(self)
+        Agent.__init__(self)
         self.free_items = []
 
     def target_creater(self, target):
@@ -344,3 +362,30 @@ class hybrid_bin_packing_prob(DNA):
 
 # important reminder operator < in bins returns false if there exists a common element in 2 bins
 # another reminder , each weight has a different key , using hash_table givven in main
+
+
+class baldwin_effect(DNA):
+    # our object is the initial position , we added 2 parameters that are required
+    def __init__(self):
+        DNA.__init__(self)
+
+    def create_object(self, target_size, target):
+        numTrue = math.floor(0.25 * target_size)
+        numQmark = target_size - 2 * numTrue
+        places_to_select = [i for i in range(target_size)]
+        self.object = [None] * target_size
+        Qmarkplaces = random.sample(places_to_select, numQmark)
+        places_to_select = list(numpy.setxor1d(numpy.array(places_to_select), numpy.array(Qmarkplaces)))
+        true_places = random.sample(places_to_select, numTrue)
+
+        self.object = ['?' if i in Qmarkplaces else '1' if i in true_places else '0' for i in range(target_size)]
+
+    def character_creation(self, target_size=0):
+        return chr(random.randint(0,1))
+
+
+#
+# if __name__ == "__main__":
+#     k = baldwin_effect()
+#     k.create_object(10, '123124234')
+#     print(k)
